@@ -1,8 +1,36 @@
-# Getting Started with Create React App
+# Wallet Deposit
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Configuration
 
-## Available Scripts
+- File location `src/helpers/config.ts`
+- Lists supported chains that are loaded dynamically when selecting.
+- `wallet_address` and `wallet_abi` (ABI) of Wallet Smart Contract that loads dynamicly when selecting chain
+- `token_address` and `token_abi` (ABI) of Token X that is used for transactions on the selected chain
+- `token_approve` sets the ammount of Token X to be approved by the Wallet Contract to transact with onbehalf of the owner. N=0 - Sets the allowance equal to the deposit amount, N>0 - Sets the allowance to the configured value.
+- Variables like `chain_id`, `name`, `rpc_url`, `native_currency.name`, `native_currency.symbol`, `native_currency.decimals` should be handled with great care since they are used when switching/adding networks on Metamask.
+
+## Init
+
+- On init app checks to see if there is a cached web3 provider, if so - auto connects Metamask.
+- If there is no cached web3 provider then there will be a button to connect using Metamask.
+- Upon successful metamask connection app will render all networks from configuration file, on click it will prompt metamask to change the Network. If network is not found on users Metamask then it will use configuration variables mentioned above to start a network addition process on users end in Metamask ( user has to proceed through confirmation windows manually to add said unknown network)
+- App will try to get balance of the Token X if it is configured `getAccountAssets` ( if not the state.networkSupported will be false, this is the same case for Wallet configuarion if it's not set )
+- In order to deposit, a user will be prompted in Metamask to approve spending limit of Token X by Wallet Contract `approveAllowance`. 
+- App always checks first to see if the spending limit needs to be increased `getAllowance`.
+- User will be prompted to confirm deposit on Metamask if all above criteria are matched `handleDeposit`.
+
+
+## Error handling
+
+- App should handle errors gracefully, any cancellation of Metamask confirmation screen will spawn en exception. As well as possible contract errors if network is overloaded or there are problems with gas fees.
+- Please add any error state to your liking in `try{} catch (error) {}` blocks when there is interaction with metamask or your internal Wallet API
+
+
+## TODO
+- Deposit requires your internal identification of the user, in this case `deposit_id` was used. Please note the `call_api` Mock function which should be changed to your internal Wallet API call to get the user identifier.
+
+
+## Available React Scripts
 
 In the project directory, you can run:
 
@@ -14,11 +42,6 @@ Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
 
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
 ### `npm run build`
 
 Builds the app for production to the `build` folder.\
@@ -26,21 +49,3 @@ It correctly bundles React in production mode and optimizes the build for the be
 
 The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
