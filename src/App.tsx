@@ -19,8 +19,8 @@ interface AppState {
   networkSupported: boolean
   pendingDeposit: boolean
   pendingApproval: boolean
-  depositAmount: number
-  allowance: number
+  depositAmount: string
+  allowance: string
 }
 
 const INITIAL_STATE: AppState = {
@@ -37,8 +37,8 @@ const INITIAL_STATE: AppState = {
   networkSupported: false,
   pendingDeposit: false,
   pendingApproval: false,
-  depositAmount: 0,
-  allowance: 0
+  depositAmount: "0",
+  allowance:"0"
 }
 
 class App extends Component { 
@@ -188,9 +188,7 @@ class App extends Component {
         ).call().then( async (allowance: string) => {
           await this.setState({ 
             fetching: false, 
-            allowance: Number(allowance) > 0 ? web3.utils.toBN( allowance ).div(
-              web3.utils.toBN( 10 ).pow( web3.utils.toBN( String( chainData.native_currency.decimals ) ) )
-            ).toNumber() : allowance
+            allowance: web3.utils.fromWei(allowance, 'ether')
           })
         } )
       } catch (error) {
@@ -214,9 +212,7 @@ class App extends Component {
         await this.token.methods.balanceOf(address).call().then( async (balance: string) => {
           await this.setState({ 
             fetching: false, 
-            balance: Number(balance) > 0 ? web3.utils.toBN( balance ).div(
-              web3.utils.toBN( 10 ).pow( web3.utils.toBN( String( chainData.native_currency.decimals ) ) )
-            ).toString() : balance
+            balance: web3.utils.fromWei(balance, 'ether')
           })
         } )
         await this.getAllowance()
@@ -237,16 +233,15 @@ class App extends Component {
     const chainData = getChainData(chainId)
     await this.getAllowance()
     if ( networkSupported ) {
-      if ( this.state.allowance < this.state.depositAmount ) {
+      if ( Number(this.state.allowance) < Number(this.state.depositAmount) ) {
         try {
           this.setState({ fetching: true });
           await this.token.methods.approve(
             chainData.wallet_address,
-            web3.utils.toBN( 
-              chainData.token_approve ? chainData.token_approve: this.state.depositAmount
-            ).mul(
-              web3.utils.toBN( 10 ).pow( web3.utils.toBN( String( chainData.native_currency.decimals ) ) )
-            ).toString() 
+            web3.utils.toWei(
+              chainData.token_approve ? String(chainData.token_approve) : this.state.depositAmount, 
+              'ether'
+            )
           ).send({from: address})
           await this.setState({
             pendingApproval: false,
@@ -263,8 +258,8 @@ class App extends Component {
   public async handleDepositChanged(event:any) {
     const { allowance } = this.state;
     await this.setState({
-      depositAmount: Number(event.target.value),
-      pendingApproval: allowance < Number(event.target.value)
+      depositAmount: String(event.target.value),
+      pendingApproval: Number(allowance) < Number(event.target.value)
     });
   }
 
@@ -276,7 +271,7 @@ class App extends Component {
     const { web3, address, chainId, networkSupported } = this.state;
     const chainData = getChainData(chainId)
     await this.getAllowance()
-    if( networkSupported && (this.state.allowance >= this.state.depositAmount) ) {
+    if( networkSupported && (Number(this.state.allowance) >= Number(this.state.depositAmount)) ) {
       try {
         this.setState({ fetching: true });
         // Call internal API to get user identifier (e.g. deposit_id)
@@ -289,14 +284,15 @@ class App extends Component {
         call_api().then(async (deposit_id: number) => {
           await this.contract.methods.deposit(
             deposit_id,
-            web3.utils.toBN( this.state.depositAmount ).mul(
-              web3.utils.toBN( 10 ).pow( web3.utils.toBN( String( chainData.native_currency.decimals ) ) )
-            ).toString() 
+            web3.utils.toWei(
+              this.state.depositAmount, 
+              'ether'
+            )
           ).send({from: address})
           // Set some success state here
           this.setState({ 
             fetching: false,
-            depositAmount: 0
+            depositAmount: "0"
           });
         } )
       } catch (error) {

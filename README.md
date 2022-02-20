@@ -9,15 +9,16 @@
 - `token_approve` sets the ammount of Token X to be approved by the Wallet Contract to transact with onbehalf of the owner. N=0 - Sets the allowance equal to the deposit amount, N>0 - Sets the allowance to the configured value.
 - Variables like `chain_id`, `name`, `rpc_url`, `native_currency.name`, `native_currency.symbol`, `native_currency.decimals` should be handled with great care since they are used when switching/adding networks on Metamask.
 
-## Init
+## Logic
 
 - On init app checks to see if there is a cached web3 provider, if so - auto connects Metamask.
 - If there is no cached web3 provider then there will be a button to connect using Metamask.
-- Upon successful metamask connection app will render all networks from configuration file, on click it will prompt metamask to change the Network. If network is not found on users Metamask then it will use configuration variables mentioned above to start a network addition process on users end in Metamask ( user has to proceed through confirmation windows manually to add said unknown network)
+- Upon successful metamask connection app will render all networks from configuration file, on click it will prompt metamask to change the Network. If network is not found on users Metamask then it will use configuration variables mentioned above to start a network addition process on user end in Metamask ( user has to proceed through confirmation windows manually to add said unknown network)
 - App will try to get balance of the Token X if it is configured `getAccountAssets` ( if not the state.networkSupported will be false, this is the same case for Wallet configuarion if it's not set )
 - In order to deposit, a user will be prompted in Metamask to approve spending limit of Token X by Wallet Contract `approveAllowance`. 
 - App always checks first to see if the spending limit needs to be increased `getAllowance`.
 - User will be prompted to confirm deposit on Metamask if all above criteria are matched `handleDeposit`.
+- App will auto refresh on Network/Chain or Account change on Metamask.
 
 
 ## Error handling
@@ -28,6 +29,7 @@
 
 ## TODO
 - Deposit requires your internal identification of the user, in this case `deposit_id` was used. Please note the `call_api` Mock function which should be changed to your internal Wallet API call to get the user identifier.
+- Render errors based on errors caught in `try{} catch (error) {}` when using Metamask or your internal API
 
 
 ## Available React Scripts
