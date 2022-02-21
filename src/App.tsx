@@ -86,18 +86,20 @@ class App extends Component {
     const networkId = await web3.eth.net.getId()
     const chainId = await web3.eth.getChainId()
     const chainData = getChainData(chainId)
-    const networkSupported = !!chainData.wallet_address.length && !!chainData.token_address.length
+    const networkSupported = !!chainData.wallet_address.length && (chainData.use_native_currency || !!chainData.token_address.length)
     if ( await web3.eth.net.isListening() && networkSupported ) {
       this.contract =
         new web3.eth.Contract(
           chainData.wallet_abi,
           chainData.wallet_address
         )
-      this.token =
-        new web3.eth.Contract(
-          chainData.token_abi,
-          chainData.token_address
-        )
+      if ( !!chainData.token_address.length ) {
+        this.token =
+          new web3.eth.Contract(
+            chainData.token_abi,
+            chainData.token_address
+          )
+      }
     } else {
       this.contract = {}
       this.token = {}
@@ -180,7 +182,7 @@ class App extends Component {
     const { web3, address, chainId, networkSupported } = this.state;
     const chainData = getChainData(chainId)
     this.setState({ fetching: true });
-    if ( networkSupported ) {
+    if ( networkSupported && !!chainData.token_address.length ) {
       try {
         await this.token.methods.allowance(
           address,
@@ -207,7 +209,7 @@ class App extends Component {
     const { web3, address, chainId, networkSupported } = this.state;
     const chainData = getChainData(chainId)
     this.setState({ fetching: true });
-    if ( networkSupported ) {
+    if ( networkSupported && !!chainData.token_address.length ) {
       try {
         await this.token.methods.balanceOf(address).call().then( async (balance: string) => {
           await this.setState({ 
@@ -256,10 +258,11 @@ class App extends Component {
   }
 
   public async handleDepositChanged(event:any) {
-    const { allowance } = this.state;
+    const { allowance, chainId } = this.state;
+    const chainData = getChainData(chainId)
     await this.setState({
       depositAmount: String(event.target.value),
-      pendingApproval: Number(allowance) < Number(event.target.value)
+      pendingApproval: !chainData.use_native_currency && Number(allowance) < Number(event.target.value)
     });
   }
 
@@ -270,8 +273,7 @@ class App extends Component {
   public async handleDeposit() {
     const { web3, address, chainId, networkSupported } = this.state;
     const chainData = getChainData(chainId)
-    await this.getAllowance()
-    if( networkSupported && (Number(this.state.allowance) >= Number(this.state.depositAmount)) ) {
+    if ( networkSupported && chainData.use_native_currency ) {
       try {
         this.setState({ fetching: true });
         // Call internal API to get user identifier (e.g. deposit_id)
@@ -284,11 +286,13 @@ class App extends Component {
         call_api().then(async (deposit_id: number) => {
           await this.contract.methods.deposit(
             deposit_id,
-            web3.utils.toWei(
+          ).send({
+            from: address,
+            value: web3.utils.toWei(
               this.state.depositAmount, 
               'ether'
             )
-          ).send({from: address})
+          })
           // Set some success state here
           this.setState({ 
             fetching: false,
@@ -299,9 +303,39 @@ class App extends Component {
         console.error(error);
         await this.setState({ fetching: false });
       }
-      await this.getAccountAssets()
+    } else {
+      await this.getAllowance()
+      if( networkSupported && (Number(this.state.allowance) >= Number(this.state.depositAmount)) ) {
+        try {
+          this.setState({ fetching: true });
+          // Call internal API to get user identifier (e.g. deposit_id)
+          // Only a mockup here
+          const call_api = async (): Promise<number> => {
+            return new Promise<number>((resolve) => {
+              resolve(123456)
+            })
+          }
+          call_api().then(async (deposit_id: number) => {
+            await this.contract.methods.deposit(
+              deposit_id,
+              web3.utils.toWei(
+                this.state.depositAmount, 
+                'ether'
+              )
+            ).send({from: address})
+            // Set some success state here
+            this.setState({ 
+              fetching: false,
+              depositAmount: "0"
+            });
+          } )
+        } catch (error) {
+          console.error(error);
+          await this.setState({ fetching: false });
+        }
+        await this.getAccountAssets()
+      }
     }
-    
   }
 
   public render = () => {
@@ -366,9 +400,13 @@ class App extends Component {
             ? <div>
                 <span>Network supported.</span><br/>
                 <span>Contract address: {chainData.wallet_address}</span><br/>
-                <span>Token address: {chainData.token_address}</span><br/>
-                <span>Token balance: {balance}</span><br/>
-                <span>Allowance: {allowance}</span><br/>
+                {!chainData.use_native_currency &&
+                  <Fragment>
+                    <span>Token address: {chainData.token_address}</span><br/>
+                    <span>Token balance: {balance}</span><br/>
+                    <span>Allowance: {allowance}</span>
+                  </Fragment> 
+                }
               </div>
             : <div>
                 <span>Network unsupported.</span><br/>

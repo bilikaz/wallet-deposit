@@ -13,6 +13,7 @@ export interface ChainData {
   token_address: string;
   token_abi: AbiItem[];
   token_approve: number;
+  use_native_currency: boolean;
   native_currency: {
     symbol: string;
     name: string;
@@ -34,6 +35,7 @@ const supportedChains: ChainData[] = [
     token_address: "",
     token_abi: [],
     token_approve: 0,
+    use_native_currency: true,
     native_currency: {
       symbol: "ETH",
       name: "Ethereum",
@@ -62,6 +64,7 @@ const supportedChains: ChainData[] = [
       {"constant":true,"name":"allowance","inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"payable":true,"stateMutability":"payable","type":"fallback"}
     ],
     token_approve: 0,
+    use_native_currency: false,
     native_currency: {
       symbol: "ETH",
       name: "Ethereum",
@@ -76,11 +79,26 @@ const supportedChains: ChainData[] = [
     chain_id: 4,
     network_id: 4,
     rpc_url: "https://rinkeby.infura.io/v3/%API_KEY%",
-    wallet_address: "",
-    wallet_abi: [],
+    wallet_address: "0xdE2509e46C941581C6f726FB8Ae0f729598d0E26",
+    wallet_abi: [
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "__depositId",
+            "type": "uint256"
+          }
+        ],
+        "name": "deposit",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      }
+    ],
     token_address: "",
     token_abi: [],
     token_approve: 0,
+    use_native_currency: true,
     native_currency: {
       symbol: "ETH",
       name: "Ethereum",
@@ -100,6 +118,7 @@ const supportedChains: ChainData[] = [
     token_address: "",
     token_abi: [],
     token_approve: 0,
+    use_native_currency: false,
     native_currency: {
       symbol: "BNB",
       name: "BNB",
@@ -119,9 +138,30 @@ const supportedChains: ChainData[] = [
     token_address: "",
     token_abi: [],
     token_approve: 0,
+    use_native_currency: false,
     native_currency: {
       symbol: "MATIC",
       name: "MATIC",
+      decimals: "18"
+    }
+  },
+  {
+    name: "Avalanche Network",
+    short_name: "avax",
+    chain: "avax",
+    network: "mainnet",
+    chain_id: 43114,
+    network_id: 43114,
+    rpc_url: "https://api.avax.network/ext/bc/C/rpc",
+    wallet_address: "",
+    wallet_abi: [],
+    token_address: "",
+    token_abi: [],
+    token_approve: 0,
+    use_native_currency: false,
+    native_currency: {
+      symbol: "AVAX",
+      name: "AVAX",
       decimals: "18"
     }
   },
